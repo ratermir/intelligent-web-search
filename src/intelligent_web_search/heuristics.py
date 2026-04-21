@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 from .config import MIN_OK_TEXT_CHARS, MIN_PARTIAL_TEXT_CHARS
 from .models import HeuristicDecision, HeuristicSignals, InternalDecision, RawFetchResult
 
@@ -47,9 +45,6 @@ MARKERS = {
         "error 429",
     ],
 }
-
-
-TAG_RE = re.compile(r"<[^>]+>")
 
 
 def _contains_any(text: str, patterns: list[str]) -> bool:
@@ -128,6 +123,20 @@ def analyze(fetch: RawFetchResult) -> HeuristicDecision:
             signals=signals,
         )
 
+    if signals.looks_like_error_page and text_length < MIN_OK_TEXT_CHARS:
+        return HeuristicDecision(
+            decision=InternalDecision.RETRY_WITH_COMPLEX,
+            reason="error_or_block_page_markers_detected",
+            signals=signals,
+        )
+
+    if signals.has_login_marker and text_length < MIN_OK_TEXT_CHARS:
+        return HeuristicDecision(
+            decision=InternalDecision.RETRY_WITH_COMPLEX,
+            reason="possible_login_wall_detected",
+            signals=signals,
+        )
+
     if text_length >= MIN_OK_TEXT_CHARS:
         return HeuristicDecision(
             decision=InternalDecision.ACCEPT_SIMPLE,
@@ -140,6 +149,7 @@ def analyze(fetch: RawFetchResult) -> HeuristicDecision:
         or signals.has_js_required_marker
         or signals.has_cloudflare_marker
         or signals.has_captcha_marker
+        or signals.looks_like_error_page
     ):
         return HeuristicDecision(
             decision=InternalDecision.ACCEPT_SIMPLE,

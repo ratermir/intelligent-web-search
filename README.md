@@ -84,11 +84,10 @@ python -m playwright install chromium
 intelligent-web-search --transport stdio
 ```
 
-### 3. Run as HTTP MCP server
+### 3. Current transport
 
-```bash
-intelligent-web-search --transport streamable-http --host 0.0.0.0 --port 8000
-```
+This build is intentionally pinned to `stdio` for maximum MCP compatibility in first deployments.
+HTTP transport can be added later, but is not enabled in the current server entrypoint.
 
 ## Docker build
 
@@ -99,10 +98,10 @@ docker build -t intelligent-web-search:latest .
 ## Docker run
 
 ```bash
-docker run --rm -p 8000:8000 \
+docker run --rm -i \
   -e IWS_USER_AGENT="IntelligentWebSearch/0.1 (+local)" \
   intelligent-web-search:latest \
-  intelligent-web-search --transport streamable-http --host 0.0.0.0 --port 8000
+  intelligent-web-search --transport stdio
 ```
 
 ## Important runtime notes
@@ -139,3 +138,8 @@ Expose this service as a single MCP server. Let the main model call:
 - `fetch_content` when it already has a URL
 - `smart_retrieve` when it wants a query-to-content pipeline
 
+
+
+## Functional test plan
+
+See `TESTING.md` for the recommended scenario matrix and runtime checks.

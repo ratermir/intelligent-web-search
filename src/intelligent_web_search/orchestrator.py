@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from .config import DEBUG_INCLUDE_HTML_LENGTH, MIN_PARTIAL_TEXT_CHARS
 from .fetch_complex import ComplexFetcher
 from .fetch_simple import SimpleFetcher
 from .heuristics import analyze
-from .models import FetchMode, FetchResponse, InternalDecision, PublicStatus
+from .models import FetchMode, FetchResponse, InternalDecision, PublicStatus, RawFetchResult
 
 
 class FetchOrchestrator:
@@ -40,6 +41,8 @@ class FetchOrchestrator:
             "decision": decision.decision.value,
             "reason": decision.reason,
         }
+        if DEBUG_INCLUDE_HTML_LENGTH:
+            diagnostics["simple_fetch"]["html_length"] = len(simple_result.html or "")
 
         if decision.decision == InternalDecision.ACCEPT_SIMPLE:
             return self._public_response(
@@ -64,13 +67,23 @@ class FetchOrchestrator:
             "http_status": complex_result.http_status,
             "error": complex_result.error,
             "final_url": complex_result.final_url,
+            "text_length": len(complex_result.text or ""),
         }
 
-        if complex_result.ok and complex_result.text:
+        if self._is_usable(complex_result):
             return self._public_response(
                 complex_result,
                 status_override=PublicStatus.OK,
                 reason_override="complex_fetch_succeeded_after_simple_rejected",
+                used_fallback=True,
+                diagnostics=diagnostics if debug else None,
+            )
+
+        if complex_result.text:
+            return self._public_response(
+                complex_result,
+                status_override=PublicStatus.PARTIAL,
+                reason_override=complex_result.error or "complex_fetch_returned_partial_content",
                 used_fallback=True,
                 diagnostics=diagnostics if debug else None,
             )
@@ -83,6 +96,9 @@ class FetchOrchestrator:
             used_fallback=True,
             diagnostics=diagnostics if debug else None,
         )
+
+    def _is_usable(self, raw: RawFetchResult) -> bool:
+        return bool(raw.ok and raw.text and len(raw.text) >= MIN_PARTIAL_TEXT_CHARS)
 
     def _public_response(
         self,
@@ -121,7 +137,10 @@ class FetchOrchestrator:
             "http_status": raw.http_status,
             "error": raw.error,
             "final_url": raw.final_url,
+            "text_length": len(raw.text or ""),
         }
+        if DEBUG_INCLUDE_HTML_LENGTH:
+            diagnostics["complex_fetch"]["html_length"] = len(raw.html or "")
         if decision is not None:
             diagnostics["decision"] = decision.model_dump()
         return diagnostics
