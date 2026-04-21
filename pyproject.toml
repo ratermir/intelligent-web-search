@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "intelligent-web-search"
+version = "0.1.0"
+description = "MCP server for intelligent web search and adaptive content fetching"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "OpenAI ChatGPT"}]
+dependencies = [
+  "mcp>=1.2.0",
+  "ddgs>=9.0.0",
+  "httpx[http2]>=0.27.0",
+  "readability-lxml>=0.8.1",
+  "beautifulsoup4>=4.12.3",
+  "markdownify>=0.13.1",
+  "playwright>=1.52.0",
+  "lxml>=5.2.2",
+  "pydantic>=2.7.0",
+  "tenacity>=9.0.0",
+  "uvicorn>=0.30.0"
+]
+
+[project.scripts]
+intelligent-web-search = "intelligent_web_search.server:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "intelligent-web-search": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--init",
+        "-e",
+        "IWS_USER_AGENT=IntelligentWebSearch/0.1 (+Open-WebUI)",
+        "intelligent-web-search:latest",
+        "intelligent-web-search",
+        "--transport",
+        "stdio"
+      ]
+    }
+  }
+}
